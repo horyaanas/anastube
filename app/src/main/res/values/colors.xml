@@ -11,4 +11,14 @@
     <color name="brand_card_light">#FFFFFF</color>
     <color name="youtube_red">#FF0000</color>
     <color name="whatsapp_green">#25D366</color>
+
+    <!-- Legacy Color Fallbacks -->
+    <color name="primary_blue">#FFBE00</color>
+    <color name="primary_dark_blue">#1E1E1E</color>
+    <color name="primary_light_blue">#FFA000</color>
+    <color name="accent_blue">#FFC107</color>
+    <color name="surface_dark">#121212</color>
+    <color name="surface_light">#F7F8FA</color>
+    <color name="card_dark">#1E1E1E</color>
+    <color name="card_light">#FFFFFF</color>
 </resources>

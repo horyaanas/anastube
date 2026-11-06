@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.Anastube" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/primary_dark_blue</item>
-        <item name="android:navigationBarColor">@color/primary_dark_blue</item>
+        <item name="android:statusBarColor">@color/brand_dark_surface</item>
+        <item name="android:navigationBarColor">@color/brand_dark_surface</item>
     </style>
 </resources>
