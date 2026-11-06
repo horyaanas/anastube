@@ -62,7 +62,9 @@ object DownloadManager {
             progress = 0,
             speed = "Starting...",
             totalSize = format.estimatedSize,
-            state = DownloadState.DOWNLOADING
+            state = DownloadState.DOWNLOADING,
+            thumbnailUrl = mediaItem.thumbnailUrl,
+            duration = mediaItem.duration
         )
 
         _downloads.update { listOf(item) + it }
@@ -138,5 +140,9 @@ object DownloadManager {
         _downloads.update { list ->
             list.filter { it.id != id }
         }
+    }
+
+    fun deleteDownload(id: String) {
+        cancelDownload(id)
     }
 }

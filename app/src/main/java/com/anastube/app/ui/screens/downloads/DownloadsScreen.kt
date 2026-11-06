@@ -193,7 +193,7 @@ fun DownloadsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 LinearProgressIndicator(
-                                    progress = active.progress,
+                                    progress = { active.progress / 100f },
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(6.dp)
@@ -202,7 +202,7 @@ fun DownloadsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "${(active.progress * 100).toInt()}% • ${active.speed}",
+                                    text = "${active.progress}% • ${active.speed}",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )

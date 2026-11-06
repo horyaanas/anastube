@@ -44,8 +44,14 @@ data class DownloadItem(
     val totalSize: String = "",
     val downloadedBytes: Long = 0,
     val totalBytes: Long = 0,
-    val state: DownloadState = DownloadState.DOWNLOADING
-)
+    val state: DownloadState = DownloadState.DOWNLOADING,
+    val thumbnailUrl: String = "",
+    val duration: String = ""
+) {
+    val filePath: String get() = destinationPath
+    val resolution: String get() = quality
+    val formattedSize: String get() = totalSize
+}
 
 data class BookmarkItem(
     val id: String,
@@ -53,7 +59,10 @@ data class BookmarkItem(
     val url: String,
     val iconColor: Long,
     val isCustom: Boolean = false
-)
+) {
+    val title: String get() = name
+    val colorInt: Long get() = iconColor
+}
 
 data class QuickToolItem(
     val title: String,
