@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Blue Rounded Background -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M24,12 H84 A12,12 0 0 1 96,24 V84 A12,12 0 0 1 84,96 H24 A12,12 0 0 1 12,84 V24 A12,12 0 0 1 24,12 Z" />
+    <!-- Gradient accent circle -->
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M54,54m-34,0a34,34 0,1,1 68,0a34,34 0,1,1 -68,0" />
+    <!-- Play Triangle (White) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,36 L70,54 L44,72 Z" />
+    <!-- Down Arrow Download Badge (Cyan Accent) -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M72,66 L78,66 L78,74 L84,74 L75,83 L66,74 L72,74 Z" />
+</vector>

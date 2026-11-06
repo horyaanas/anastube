@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">أنس تيوب (anastube)</string>
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_browser">المتصفح</string>
+    <string name="tab_downloads">التحميلات</string>
+    <string name="tab_library">ملفاتي</string>
+    <string name="tab_settings">الإعدادات</string>
+    <string name="search_placeholder">ابحث أو الصق الرابط هنا...</string>
+    <string name="download_video">فيديو</string>
+    <string name="download_music">موسيقى (صوت)</string>
+    <string name="start_download">تنزيل</string>
+    <string name="no_ads_tag">تجربة نقية 100% بدون إعلانات</string>
+    <string name="trending">شائع</string>
+    <string name="music">موسيقى</string>
+    <string name="gaming">ألعاب</string>
+    <string name="news">أخبار</string>
+    <string name="active_downloads">قيد التحميل</string>
+    <string name="completed_downloads">المكتملة</string>
+    <string name="no_downloads_yet">لا توجد تنزيلات حتى الآن</string>
+    <string name="detected_media">تم رصد وسائط قابلة للتحميل</string>
+</resources>
