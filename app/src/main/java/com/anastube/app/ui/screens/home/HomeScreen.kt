@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.anastube.app.data.BookmarkItem
 import com.anastube.app.data.MediaItem
+import com.anastube.app.data.YouTubeRepository
 import com.anastube.app.downloader.MediaExtractor
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,14 +41,25 @@ fun HomeScreen(
     onOpenVault: () -> Unit
 ) {
     val context = LocalContext.current
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("All") }
-    var showAddSiteDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    // Clipboard Sniffer (SnapTube smart clipboard link detector)
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Trending") }
+    var showAddSiteDialog by remember { mutableStateOf(false) }
+    var isLoadingFeed by remember { mutableStateOf(false) }
+
+    // Live Video Feed from YouTube
+    var liveVideos by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
+
+    // Clipboard Sniffer
     var copiedLinkDetected by remember { mutableStateOf<String?>(null) }
 
+    // Fetch initial trending feed on start
     LaunchedEffect(Unit) {
+        isLoadingFeed = true
+        liveVideos = YouTubeRepository.getTrendingVideos()
+        isLoadingFeed = false
+
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
         if (!clip.isNullOrBlank() && MediaExtractor.isMediaShareUrl(clip)) {
@@ -54,58 +67,17 @@ fun HomeScreen(
         }
     }
 
-    val categories = listOf("All", "Trending", "Music", "Shorts & Reels", "Gaming", "News", "Movies")
+    val categories = listOf("Trending", "Music", "Arabic Nasheed", "Gaming", "News", "Movies", "Podcasts")
 
     var bookmarks by remember {
         mutableStateOf(
             listOf(
                 BookmarkItem("yt", "YouTube", "https://m.youtube.com", 0xFFFF0000),
-                BookmarkItem("ig", "Instagram", "https://instagram.com", 0xFFE1306C),
                 BookmarkItem("tk", "TikTok", "https://www.tiktok.com", 0xFF000000),
+                BookmarkItem("ig", "Instagram", "https://instagram.com", 0xFFE1306C),
                 BookmarkItem("sc", "SoundCloud", "https://soundcloud.com", 0xFFFF5500),
                 BookmarkItem("fb", "Facebook", "https://m.facebook.com", 0xFF1877F2),
                 BookmarkItem("tw", "Twitter / X", "https://x.com", 0xFF1DA1F2)
-            )
-        )
-    }
-
-    val sampleMediaList = remember {
-        listOf(
-            MediaItem(
-                id = "vid_1",
-                title = "Amazing 4K Nature & Wildlife Relaxation Video - Ultra HD",
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=800&q=80",
-                duration = "10:24",
-                author = "Earth Discovery",
-                views = "2.4M views"
-            ),
-            MediaItem(
-                id = "vid_2",
-                title = "Deep Focus Music - Ambient Lofi Study Session with Rain Sounds",
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
-                duration = "45:10",
-                author = "Chill Vibes",
-                views = "980K views"
-            ),
-            MediaItem(
-                id = "vid_3",
-                title = "Top 10 Emerging Tech Innovations That Will Shape 2026",
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
-                duration = "18:05",
-                author = "Tech Universe",
-                views = "1.1M views"
-            ),
-            MediaItem(
-                id = "vid_4",
-                title = "Epic Acoustic Guitar Solos Compilation (Lossless Master)",
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=800&q=80",
-                duration = "22:15",
-                author = "Guitar Masters",
-                views = "450K views"
             )
         )
     }
@@ -153,7 +125,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text(
-                                    text = "Pure Ad-Free",
+                                    text = "Zero Ads",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -181,9 +153,9 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            // Smart Clipboard Link Banner (Signature SnapTube feature)
+            // Smart Clipboard Banner
             if (copiedLinkDetected != null) {
                 item {
                     Card(
@@ -247,24 +219,32 @@ fun HomeScreen(
                 }
             }
 
-            // Search Bar
+            // Real Live Search Bar
             item {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Search YouTube or paste web URL...") },
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    placeholder = { Text("Search YouTube videos or paste URL...") },
                     leadingIcon = {
                         Icon(imageVector = Icons.Default.Search, contentDescription = null)
                     },
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
-                            IconButton(onClick = { onNavigateToBrowser(searchQuery) }) {
+                            IconButton(
+                                onClick = {
+                                    scope.launch {
+                                        isLoadingFeed = true
+                                        liveVideos = YouTubeRepository.searchVideos(searchQuery)
+                                        isLoadingFeed = false
+                                    }
+                                }
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowForward,
-                                    contentDescription = "Go",
+                                    contentDescription = "Search",
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -281,12 +261,12 @@ fun HomeScreen(
                 )
             }
 
-            // SnapTube Quick Utilities Toolset (Status Saver, Batch, MP3 Converter, Vault)
+            // SnapTube Quick Utilities Bar (Status Saver, Batch, MP3 Converter, Vault)
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     HomeToolItem(Icons.Default.DownloadForOffline, "Status Saver") {
@@ -296,7 +276,12 @@ fun HomeScreen(
                         // Open batch dialog
                     }
                     HomeToolItem(Icons.Default.MusicNote, "To MP3") {
-                        // Open converter
+                        scope.launch {
+                            isLoadingFeed = true
+                            selectedCategory = "Music"
+                            liveVideos = YouTubeRepository.searchVideos("Trending Arabic and Global Music")
+                            isLoadingFeed = false
+                        }
                     }
                     HomeToolItem(Icons.Default.Security, "Private Vault") {
                         onOpenVault()
@@ -309,7 +294,7 @@ fun HomeScreen(
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = 8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -332,7 +317,7 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(5.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = site.name,
                                 style = MaterialTheme.typography.labelSmall,
@@ -341,7 +326,6 @@ fun HomeScreen(
                         }
                     }
 
-                    // (+) Add Site Button
                     item {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -360,29 +344,37 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Add Site",
-                                style = MaterialTheme.typography.labelSmall
-                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Add Site", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
             }
 
-            // Category Chips
+            // Category Chips (Instant Live Filtering)
             item {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp),
+                        .padding(bottom = 6.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(categories) { category ->
                         FilterChip(
                             selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
+                            onClick = {
+                                selectedCategory = category
+                                scope.launch {
+                                    isLoadingFeed = true
+                                    liveVideos = if (category == "Trending") {
+                                        YouTubeRepository.getTrendingVideos()
+                                    } else {
+                                        YouTubeRepository.searchVideos(category)
+                                    }
+                                    isLoadingFeed = false
+                                }
+                            },
                             label = { Text(category) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -394,18 +386,31 @@ fun HomeScreen(
                 }
             }
 
-            // Feed Items
-            items(sampleMediaList) { media ->
-                MediaCard(
-                    media = media,
-                    onPlay = { onPlayMedia(media) },
-                    onDownload = { onDownloadMedia(media) }
-                )
+            // Loading Progress or Real Videos List
+            if (isLoadingFeed) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            } else {
+                items(liveVideos) { media ->
+                    MediaCard(
+                        media = media,
+                        onPlay = { onPlayMedia(media) },
+                        onDownload = { onDownloadMedia(media) }
+                    )
+                }
             }
         }
     }
 
-    // Add Custom Site Dialog (SnapTube's dialog_add_sites)
+    // Add Custom Site Dialog
     if (showAddSiteDialog) {
         var siteName by remember { mutableStateOf("") }
         var siteUrl by remember { mutableStateOf("") }
@@ -521,7 +526,7 @@ fun MediaCard(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.18f)),
+                        .background(Color.Black.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Surface(

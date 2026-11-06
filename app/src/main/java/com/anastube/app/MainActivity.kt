@@ -31,6 +31,7 @@ import com.anastube.app.ui.screens.library.LibraryScreen
 import com.anastube.app.ui.screens.player.MiniPlayerBar
 import com.anastube.app.ui.screens.player.PlayerScreen
 import com.anastube.app.ui.screens.player.PlayerViewModel
+import com.anastube.app.ui.screens.player.YouTubePlayerScreen
 import com.anastube.app.ui.screens.settings.SettingsScreen
 import com.anastube.app.ui.theme.AnastubeTheme
 import java.net.URLDecoder
@@ -211,21 +212,37 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        // Full Screen Gesture Video Player Overlay
+                        // Full Screen Video Player Overlay (YouTube native or direct ExoPlayer)
                         if (currentPlayingMedia != null && !isMiniPlayer) {
-                            PlayerScreen(
-                                videoUrl = currentPlayingMedia!!.url,
-                                title = currentPlayingMedia!!.title,
-                                onMinimize = {
-                                    PlayerViewModel.minimizeToMiniPlayer()
-                                },
-                                onDownloadCurrent = {
-                                    currentPlayingMedia?.let { media ->
+                            val media = currentPlayingMedia!!
+                            val isYouTube = media.url.contains("youtube") || media.url.contains("youtu.be") || media.id.length == 11
+                            if (isYouTube) {
+                                YouTubePlayerScreen(
+                                    mediaItem = media,
+                                    onMinimize = {
+                                        PlayerViewModel.minimizeToMiniPlayer()
+                                    },
+                                    onDownloadCurrent = {
+                                        availableFormats = MediaExtractor.resolveFormats(media)
+                                        activeMediaForDownload = media
+                                    },
+                                    onPlayRelated = { related ->
+                                        PlayerViewModel.playMedia(related)
+                                    }
+                                )
+                            } else {
+                                PlayerScreen(
+                                    videoUrl = media.url,
+                                    title = media.title,
+                                    onMinimize = {
+                                        PlayerViewModel.minimizeToMiniPlayer()
+                                    },
+                                    onDownloadCurrent = {
                                         availableFormats = MediaExtractor.resolveFormats(media)
                                         activeMediaForDownload = media
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
 
                         // SnapTube Signature Download Bottom Sheet Overlay
