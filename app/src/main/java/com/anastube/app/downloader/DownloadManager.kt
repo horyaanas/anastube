@@ -121,7 +121,7 @@ object DownloadManager {
         }
     }
 
-    fun resumeDownload(context: Context, id: String) {
+    fun resumeDownload(id: String) {
         val item = _downloads.value.find { it.id == id } ?: return
         val job = scope.launch {
             startDownloadTask(id, item.sourceUrl, File(item.destinationPath))
@@ -132,6 +132,10 @@ object DownloadManager {
                 if (it.id == id) it.copy(state = DownloadState.DOWNLOADING, speed = "Resuming...") else it
             }
         }
+    }
+
+    fun resumeDownload(context: Context?, id: String) {
+        resumeDownload(id)
     }
 
     fun cancelDownload(id: String) {

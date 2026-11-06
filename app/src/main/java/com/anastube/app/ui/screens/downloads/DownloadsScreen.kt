@@ -105,14 +105,7 @@ fun DownloadsScreen(
                 TabRow(
                     selectedTabIndex = selectedTopTab,
                     containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = SnapTubeYellow,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTopTab]),
-                            color = SnapTubeYellow,
-                            height = 3.dp
-                        )
-                    }
+                    contentColor = SnapTubeYellow
                 ) {
                     Tab(
                         selected = selectedTopTab == 0,
