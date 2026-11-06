@@ -5,9 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,7 +28,9 @@ import com.anastube.app.ui.screens.download.DownloadFormatSheet
 import com.anastube.app.ui.screens.downloads.DownloadsScreen
 import com.anastube.app.ui.screens.home.HomeScreen
 import com.anastube.app.ui.screens.library.LibraryScreen
+import com.anastube.app.ui.screens.player.MiniPlayerBar
 import com.anastube.app.ui.screens.player.PlayerScreen
+import com.anastube.app.ui.screens.player.PlayerViewModel
 import com.anastube.app.ui.screens.settings.SettingsScreen
 import com.anastube.app.ui.theme.AnastubeTheme
 import java.net.URLDecoder
@@ -56,6 +56,11 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val downloads by DownloadManager.downloads.collectAsState()
                 val activeCount = downloads.count { it.state != DownloadState.COMPLETED }
+
+                // Player View Model State (Seamless Fullscreen & Sticky Mini Player)
+                val currentPlayingMedia by PlayerViewModel.currentMedia.collectAsState()
+                val isPlaying by PlayerViewModel.isPlaying.collectAsState()
+                val isMiniPlayer by PlayerViewModel.isMiniPlayer.collectAsState()
 
                 // Global Download Sheet State
                 var activeMediaForDownload by remember { mutableStateOf<MediaItem?>(null) }
@@ -88,18 +93,31 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     bottomBar = {
-                        if (showBottomBar) {
-                            AnastubeBottomNavBar(
-                                currentRoute = currentRoute,
-                                activeDownloadCount = activeCount,
-                                onNavigate = { screen ->
-                                    navController.navigate(screen.route) {
-                                        popUpTo(Screen.Home.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
+                        Column {
+                            // Sticky Mini Player Bar (SnapTube style above bottom tabs)
+                            if (currentPlayingMedia != null && isMiniPlayer) {
+                                MiniPlayerBar(
+                                    mediaItem = currentPlayingMedia!!,
+                                    isPlaying = isPlaying,
+                                    onExpand = { PlayerViewModel.expandToFullScreen() },
+                                    onTogglePlayPause = { PlayerViewModel.togglePlayPause() },
+                                    onClose = { PlayerViewModel.closePlayer() }
+                                )
+                            }
+
+                            if (showBottomBar) {
+                                AnastubeBottomNavBar(
+                                    currentRoute = currentRoute,
+                                    activeDownloadCount = activeCount,
+                                    onNavigate = { screen ->
+                                        navController.navigate(screen.route) {
+                                            popUpTo(Screen.Home.route) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 ) { innerPadding ->
@@ -119,9 +137,7 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate("browser?url=$encoded")
                                     },
                                     onPlayMedia = { media ->
-                                        val encodedUrl = URLEncoder.encode(media.url, StandardCharsets.UTF_8.toString())
-                                        val encodedTitle = URLEncoder.encode(media.title, StandardCharsets.UTF_8.toString())
-                                        navController.navigate(Screen.Player.createRoute(encodedUrl, encodedTitle))
+                                        PlayerViewModel.playMedia(media)
                                     },
                                     onDownloadMedia = { media ->
                                         availableFormats = MediaExtractor.resolveFormats(media)
@@ -159,9 +175,16 @@ class MainActivity : ComponentActivity() {
                             composable(Screen.Downloads.route) {
                                 DownloadsScreen(
                                     onPlayLocalFile = { path, title ->
-                                        val encodedUrl = URLEncoder.encode(path, StandardCharsets.UTF_8.toString())
-                                        val encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
-                                        navController.navigate(Screen.Player.createRoute(encodedUrl, encodedTitle))
+                                        val media = MediaItem(
+                                            id = "local_${System.currentTimeMillis()}",
+                                            title = title,
+                                            url = path,
+                                            thumbnailUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
+                                            duration = "Local",
+                                            author = "Downloaded",
+                                            views = ""
+                                        )
+                                        PlayerViewModel.playMedia(media)
                                     }
                                 )
                             }
@@ -169,9 +192,16 @@ class MainActivity : ComponentActivity() {
                             composable(Screen.Library.route) {
                                 LibraryScreen(
                                     onPlayMedia = { path, name ->
-                                        val encodedUrl = URLEncoder.encode(path, StandardCharsets.UTF_8.toString())
-                                        val encodedTitle = URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
-                                        navController.navigate(Screen.Player.createRoute(encodedUrl, encodedTitle))
+                                        val media = MediaItem(
+                                            id = "library_${System.currentTimeMillis()}",
+                                            title = name,
+                                            url = path,
+                                            thumbnailUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
+                                            duration = "Local",
+                                            author = "My Files",
+                                            views = ""
+                                        )
+                                        PlayerViewModel.playMedia(media)
                                     }
                                 )
                             }
@@ -179,36 +209,26 @@ class MainActivity : ComponentActivity() {
                             composable(Screen.Settings.route) {
                                 SettingsScreen()
                             }
-
-                            composable(
-                                route = Screen.Player.route,
-                                arguments = listOf(
-                                    navArgument("url") { type = NavType.StringType },
-                                    navArgument("title") { type = NavType.StringType }
-                                )
-                            ) { backStack ->
-                                val rawUrl = backStack.arguments?.getString("url") ?: ""
-                                val rawTitle = backStack.arguments?.getString("title") ?: "Video Player"
-                                val decodedUrl = try {
-                                    URLDecoder.decode(rawUrl, StandardCharsets.UTF_8.toString())
-                                } catch (e: Exception) {
-                                    rawUrl
-                                }
-                                val decodedTitle = try {
-                                    URLDecoder.decode(rawTitle, StandardCharsets.UTF_8.toString())
-                                } catch (e: Exception) {
-                                    rawTitle
-                                }
-
-                                PlayerScreen(
-                                    videoUrl = decodedUrl,
-                                    title = decodedTitle,
-                                    onBack = { navController.popBackStack() }
-                                )
-                            }
                         }
 
-                        // Download Bottom Sheet Overlay
+                        // Full Screen Gesture Video Player Overlay
+                        if (currentPlayingMedia != null && !isMiniPlayer) {
+                            PlayerScreen(
+                                videoUrl = currentPlayingMedia!!.url,
+                                title = currentPlayingMedia!!.title,
+                                onMinimize = {
+                                    PlayerViewModel.minimizeToMiniPlayer()
+                                },
+                                onDownloadCurrent = {
+                                    currentPlayingMedia?.let { media ->
+                                        availableFormats = MediaExtractor.resolveFormats(media)
+                                        activeMediaForDownload = media
+                                    }
+                                }
+                            )
+                        }
+
+                        // SnapTube Signature Download Bottom Sheet Overlay
                         activeMediaForDownload?.let { media ->
                             DownloadFormatSheet(
                                 mediaItem = media,
