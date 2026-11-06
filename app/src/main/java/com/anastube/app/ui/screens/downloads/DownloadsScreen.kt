@@ -1,19 +1,15 @@
 package com.anastube.app.ui.screens.downloads
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Audiotrack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,19 +33,37 @@ fun DownloadsScreen(
     val context = LocalContext.current
     val downloads by DownloadManager.downloads.collectAsState()
     var selectedTab by remember { mutableStateOf(0) }
+    var downloadedFilter by remember { mutableStateOf("All") }
+    var showSpeedDialog by remember { mutableStateOf(false) }
+    var selectedSpeedMode by remember { mutableStateOf("Maximum (Turbo)") }
 
     val activeDownloads = downloads.filter { it.state != DownloadState.COMPLETED }
     val completedDownloads = downloads.filter { it.state == DownloadState.COMPLETED }
+
+    val filteredCompleted = when (downloadedFilter) {
+        "Videos" -> completedDownloads.filter { !it.isAudio }
+        "Music" -> completedDownloads.filter { it.isAudio }
+        else -> completedDownloads
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Downloads Manager",
+                        text = "Download Manager",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                },
+                actions = {
+                    IconButton(onClick = { showSpeedDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = "Speed Control",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -62,6 +76,41 @@ fun DownloadsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Storage Bar Indicator (SnapTube storage preview)
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Internal Storage: 38.4 GB Available",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                    Text(
+                        text = selectedSpeedMode.take(7),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -71,21 +120,31 @@ fun DownloadsScreen(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     text = {
-                        Text("Downloading (${activeDownloads.size})")
+                        Text(
+                            text = "Downloading (${activeDownloads.size})",
+                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     text = {
-                        Text("Completed (${completedDownloads.size})")
+                        Text(
+                            text = "Downloaded (${completedDownloads.size})",
+                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 )
             }
 
             if (selectedTab == 0) {
                 if (activeDownloads.isEmpty()) {
-                    EmptyDownloadsView(message = "No active downloads right now")
+                    EmptyDownloadsView(
+                        icon = Icons.Default.FileDownload,
+                        title = "No active downloads",
+                        subtitle = "Videos and music you download will appear here with live speed"
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -110,15 +169,41 @@ fun DownloadsScreen(
                     }
                 }
             } else {
-                if (completedDownloads.isEmpty()) {
-                    EmptyDownloadsView(message = "No completed downloads yet")
+                // Filter chips in Completed Tab
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("All", "Videos", "Music").forEach { filter ->
+                        item {
+                            FilterChip(
+                                selected = downloadedFilter == filter,
+                                onClick = { downloadedFilter = filter },
+                                label = { Text(filter) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+
+                if (filteredCompleted.isEmpty()) {
+                    EmptyDownloadsView(
+                        icon = Icons.Default.FolderOpen,
+                        title = "No completed downloads yet",
+                        subtitle = "Start downloading content to enjoy offline playback anytime"
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(completedDownloads) { item ->
+                        items(filteredCompleted) { item ->
                             CompletedDownloadRow(
                                 item = item,
                                 onPlay = {
@@ -130,6 +215,41 @@ fun DownloadsScreen(
                 }
             }
         }
+    }
+
+    // Speed Control Dialog (SnapTube dialog_adjust_speed_limit_layout)
+    if (showSpeedDialog) {
+        val speedOptions = listOf("Maximum (Turbo)", "Standard (5 MB/s)", "Battery Saver (1 MB/s)")
+        AlertDialog(
+            onDismissRequest = { showSpeedDialog = false },
+            title = { Text("Download Speed Mode", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    speedOptions.forEach { opt ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedSpeedMode = opt }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedSpeedMode == opt,
+                                onClick = { selectedSpeedMode = opt },
+                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(opt, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showSpeedDialog = false }) {
+                    Text("Apply")
+                }
+            }
+        )
     }
 }
 
@@ -149,19 +269,19 @@ fun ActiveDownloadRow(
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (item.isAudio) Icons.Default.Audiotrack else Icons.Default.Videocam,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -172,7 +292,7 @@ fun ActiveDownloadRow(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${item.format} • ${item.speed} • ${item.totalSize}",
+                        text = "${item.format} (${item.quality}) • ${item.speed} • ${item.totalSize}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -207,7 +327,7 @@ fun ActiveDownloadRow(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -248,7 +368,7 @@ fun CompletedDownloadRow(
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -297,31 +417,45 @@ fun CompletedDownloadRow(
 }
 
 @Composable
-fun EmptyDownloadsView(message: String) {
+fun EmptyDownloadsView(
+    icon: ImageVector,
+    title: String,
+    subtitle: String
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                modifier = Modifier.size(80.dp)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                modifier = Modifier.size(88.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Default.Download,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(44.dp)
                     )
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }

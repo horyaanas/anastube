@@ -10,6 +10,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.anastube.app.data.MediaItem
 import com.anastube.app.downloader.MediaExtractor
@@ -40,47 +43,81 @@ fun BrowserScreen(
     var detectedMediaUrl by remember { mutableStateOf<String?>(null) }
     var pageTitle by remember { mutableStateOf("Browser") }
 
+    val quickSites = remember {
+        listOf(
+            "YouTube" to "https://m.youtube.com",
+            "Instagram" to "https://instagram.com",
+            "TikTok" to "https://www.tiktok.com",
+            "SoundCloud" to "https://soundcloud.com",
+            "Facebook" to "https://m.facebook.com",
+            "Twitter" to "https://x.com"
+        )
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    OutlinedTextField(
-                        value = inputUrl,
-                        onValueChange = { inputUrl = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        singleLine = true,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                TopAppBar(
+                    title = {
+                        OutlinedTextField(
+                            value = inputUrl,
+                            onValueChange = { inputUrl = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            singleLine = true,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (webViewInstance?.canGoBack() == true) webViewInstance?.goBack()
+                        }) {
+                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            if (webViewInstance?.canGoForward() == true) webViewInstance?.goForward()
+                        }) {
+                            Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Forward")
+                        }
+                        IconButton(onClick = {
+                            webViewInstance?.reload()
+                        }) {
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (webViewInstance?.canGoBack() == true) webViewInstance?.goBack()
-                    }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        if (webViewInstance?.canGoForward() == true) webViewInstance?.goForward()
-                    }) {
-                        Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Forward")
-                    }
-                    IconButton(onClick = {
-                        webViewInstance?.reload()
-                    }) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+
+                // Quick sites bar (SnapTube browser bookmarks row)
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(quickSites) { (name, url) ->
+                        FilterChip(
+                            selected = currentUrl.contains(name.lowercase()),
+                            onClick = {
+                                currentUrl = url
+                                inputUrl = url
+                                webViewInstance?.loadUrl(url)
+                            },
+                            label = { Text(name, fontSize = 11.sp) },
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                    }
+                }
+            }
         },
         floatingActionButton = {
             // Floating Download Detector FAB (Signature SnapTube feature)
@@ -93,11 +130,11 @@ fun BrowserScreen(
                     onClick = {
                         val item = MediaItem(
                             id = "browser_${System.currentTimeMillis()}",
-                            title = pageTitle.ifBlank { "Web Media Video" },
+                            title = pageTitle.ifBlank { "Online Stream Video" },
                             url = detectedMediaUrl ?: currentUrl,
                             thumbnailUrl = "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=400&q=80",
                             duration = "HD",
-                            author = "Web Source",
+                            author = "Web Stream",
                             views = ""
                         )
                         onDownloadTriggered(item)

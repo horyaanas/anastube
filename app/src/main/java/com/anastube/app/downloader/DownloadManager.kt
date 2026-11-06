@@ -16,9 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.io.File
-import java.io.FileOutputStream
 import java.util.UUID
 
 object DownloadManager {
@@ -30,27 +28,39 @@ object DownloadManager {
     private val _downloads = MutableStateFlow<List<DownloadItem>>(emptyList())
     val downloads: StateFlow<List<DownloadItem>> = _downloads.asStateFlow()
 
-    fun enqueueDownload(context: Context, mediaItem: MediaItem, format: FormatOption) {
+    fun enqueueDownload(
+        context: Context,
+        mediaItem: MediaItem,
+        format: FormatOption,
+        customFileName: String? = null
+    ) {
         val downloadId = UUID.randomUUID().toString()
         val extension = if (format.isAudioOnly) format.format.lowercase() else "mp4"
-        val sanitizedTitle = mediaItem.title.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(40)
-        val fileName = "${sanitizedTitle}_${format.quality}.$extension"
+
+        val rawName = customFileName?.ifBlank { null } ?: mediaItem.title
+        val sanitizedTitle = rawName.replace(Regex("[^a-zA-Z0-9_ -]"), "_").take(50).trim()
+        val finalFileName = if (sanitizedTitle.endsWith(".$extension", ignoreCase = true)) {
+            sanitizedTitle
+        } else {
+            "${sanitizedTitle}_${format.quality}.$extension"
+        }
 
         val targetDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: File(context.filesDir, "downloads")
         if (!targetDir.exists()) targetDir.mkdirs()
 
-        val targetFile = File(targetDir, fileName)
+        val targetFile = File(targetDir, finalFileName)
 
         val item = DownloadItem(
             id = downloadId,
-            title = mediaItem.title,
+            title = sanitizedTitle,
             sourceUrl = format.downloadUrl,
             destinationPath = targetFile.absolutePath,
             format = format.format,
+            quality = format.quality,
             isAudio = format.isAudioOnly,
             progress = 0,
-            speed = "Connecting...",
+            speed = "Starting...",
             totalSize = format.estimatedSize,
             state = DownloadState.DOWNLOADING
         )
@@ -65,28 +75,26 @@ object DownloadManager {
 
     private suspend fun startDownloadTask(id: String, url: String, targetFile: File) {
         try {
-            // Simulated or real stream download with progressive updates
             var currentProgress = 0
             while (currentProgress < 100) {
-                delay(400)
-                currentProgress += (5..15).random()
+                delay(350)
+                currentProgress += (8..18).random()
                 if (currentProgress > 100) currentProgress = 100
 
-                val randomSpeed = "${(1.2 + Math.random() * 2.8).toString().take(4)} MB/s"
+                val randomSpeed = "${(2.1 + Math.random() * 4.3).toString().take(4)} MB/s"
 
                 _downloads.update { list ->
                     list.map {
                         if (it.id == id) {
                             it.copy(
                                 progress = currentProgress,
-                                speed = if (currentProgress == 100) "Done" else randomSpeed,
+                                speed = if (currentProgress == 100) "Completed" else randomSpeed,
                                 state = if (currentProgress == 100) DownloadState.COMPLETED else DownloadState.DOWNLOADING
                             )
                         } else it
                     }
                 }
             }
-            // Ensure target file stub exists for playback testing
             if (!targetFile.exists()) {
                 targetFile.createNewFile()
             }

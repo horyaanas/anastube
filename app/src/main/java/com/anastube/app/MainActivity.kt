@@ -126,6 +126,9 @@ class MainActivity : ComponentActivity() {
                                     onDownloadMedia = { media ->
                                         availableFormats = MediaExtractor.resolveFormats(media)
                                         activeMediaForDownload = media
+                                    },
+                                    onOpenVault = {
+                                        navController.navigate(Screen.Library.route)
                                     }
                                 )
                             }
@@ -211,8 +214,8 @@ class MainActivity : ComponentActivity() {
                                 mediaItem = media,
                                 formats = availableFormats,
                                 onDismiss = { activeMediaForDownload = null },
-                                onStartDownload = { format ->
-                                    DownloadManager.enqueueDownload(context, media, format)
+                                onStartDownload = { format, customFileName ->
+                                    DownloadManager.enqueueDownload(context, media, format, customFileName)
                                     activeMediaForDownload = null
                                     navController.navigate(Screen.Downloads.route)
                                 }
