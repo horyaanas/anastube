@@ -1,5 +1,7 @@
 package com.anastube.app.ui.screens.downloads
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,12 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.anastube.app.data.DownloadItem
 import com.anastube.app.data.DownloadState
 import com.anastube.app.downloader.DownloadManager
@@ -33,36 +36,82 @@ fun DownloadsScreen(
 ) {
     val context = LocalContext.current
     val downloads by DownloadManager.downloads.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) }
-    var downloadedFilter by remember { mutableStateOf("All") }
-    var showSpeedDialog by remember { mutableStateOf(false) }
-    var selectedSpeedMode by remember { mutableStateOf("Maximum (Turbo)") }
+
+    var selectedFilter by remember { mutableStateOf("الكل") }
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
 
     val activeDownloads = downloads.filter { it.state != DownloadState.COMPLETED }
     val completedDownloads = downloads.filter { it.state == DownloadState.COMPLETED }
 
-    val filteredCompleted = when (downloadedFilter) {
-        "Videos" -> completedDownloads.filter { !it.isAudio }
-        "Music" -> completedDownloads.filter { it.isAudio }
-        else -> completedDownloads
+    val filteredList = completedDownloads.filter { item ->
+        val matchesCategory = when (selectedFilter) {
+            "فيديو" -> !item.isAudio
+            "موسيقى" -> item.isAudio
+            else -> true
+        }
+        val matchesQuery = if (searchQuery.isBlank()) true else item.title.contains(searchQuery, ignoreCase = true)
+        matchesCategory && matchesQuery
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Download Manager",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (isSearchActive) {
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("بحث في الملفات المنزلة...") },
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = "تم التنزيل",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 20.sp
+                        )
+                    }
                 },
                 actions = {
-                    IconButton(onClick = { showSpeedDialog = true }) {
+                    IconButton(onClick = { isSearchActive = !isSearchActive }) {
                         Icon(
-                            imageVector = Icons.Default.Speed,
-                            contentDescription = "Speed Control",
+                            imageVector = if (isSearchActive) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = "Search",
                             tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = {
+                        // Clear all completed files
+                        completedDownloads.forEach { DownloadManager.deleteDownload(it.id) }
+                        Toast.makeText(context, "تم مسح القائمة", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = "Trash",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = {
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, "أستخدم تطبيق Anastube لتحميل الموسيقى والفيديوهات بجودة عالية!")
+                            type = "text/plain"
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "مشاركة Anastube"))
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -77,387 +126,266 @@ fun DownloadsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Storage Bar Indicator (SnapTube storage preview)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            // Category Filter Pills: [الكل, فيديو, موسيقى]
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(10.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Internal Storage: 38.4 GB Available",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
-                    Text(
-                        text = selectedSpeedMode.take(7),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                val filters = listOf("الكل", "فيديو", "موسيقى")
+                items(filters) { filter ->
+                    val isSelected = selectedFilter == filter
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedFilter = filter },
+                        label = {
+                            Text(
+                                text = filter,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 13.sp
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(16.dp)
                     )
                 }
             }
 
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary
-            ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = {
-                        Text(
-                            text = "Downloading (${activeDownloads.size})",
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = {
-                        Text(
-                            text = "Downloaded (${completedDownloads.size})",
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                )
-            }
-
-            if (selectedTab == 0) {
-                if (activeDownloads.isEmpty()) {
-                    EmptyDownloadsView(
-                        icon = Icons.Default.FileDownload,
-                        title = "No active downloads",
-                        subtitle = "Videos and music you download will appear here with live speed"
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(activeDownloads) { item ->
-                            ActiveDownloadRow(
-                                item = item,
-                                onPauseResume = {
-                                    if (item.state == DownloadState.PAUSED) {
-                                        DownloadManager.resumeDownload(context, item.id)
-                                    } else {
-                                        DownloadManager.pauseDownload(item.id)
-                                    }
-                                },
-                                onCancel = {
-                                    DownloadManager.cancelDownload(item.id)
-                                }
+            // Active Downloads Section (if any downloading in progress)
+            if (activeDownloads.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "جارِ التنزيل (${activeDownloads.size})",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp
+                            )
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        activeDownloads.forEach { active ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                LinearProgressIndicator(
+                                    progress = active.progress,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "${(active.progress * 100).toInt()}% • ${active.speed}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Downloaded Files List (Screenshot 4)
+            if (filteredList.isEmpty() && activeDownloads.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(30.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(70.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.FolderOpen,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "لا توجد ملفات منزلة حتى الآن",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = "الفيديوهات والموسيقى التي تنزلها ستظهر هنا ويمكنك تشغيلها بدون إنترنت",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                        )
                     }
                 }
             } else {
-                // Filter chips in Completed Tab
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    listOf("All", "Videos", "Music").forEach { filter ->
-                        item {
-                            FilterChip(
-                                selected = downloadedFilter == filter,
-                                onClick = { downloadedFilter = filter },
-                                label = { Text(filter) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White
-                                )
-                            )
-                        }
-                    }
-                }
-
-                if (filteredCompleted.isEmpty()) {
-                    EmptyDownloadsView(
-                        icon = Icons.Default.FolderOpen,
-                        title = "No completed downloads yet",
-                        subtitle = "Start downloading content to enjoy offline playback anytime"
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(filteredCompleted) { item ->
-                            CompletedDownloadRow(
-                                item = item,
-                                onPlay = {
-                                    onPlayLocalFile(item.destinationPath, item.title)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Speed Control Dialog (SnapTube dialog_adjust_speed_limit_layout)
-    if (showSpeedDialog) {
-        val speedOptions = listOf("Maximum (Turbo)", "Standard (5 MB/s)", "Battery Saver (1 MB/s)")
-        AlertDialog(
-            onDismissRequest = { showSpeedDialog = false },
-            title = { Text("Download Speed Mode", fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    speedOptions.forEach { opt ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedSpeedMode = opt }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedSpeedMode == opt,
-                                onClick = { selectedSpeedMode = opt },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(opt, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(onClick = { showSpeedDialog = false }) {
-                    Text("Apply")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun ActiveDownloadRow(
-    item: DownloadItem,
-    onPauseResume: () -> Unit,
-    onCancel: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (item.isAudio) Icons.Default.Audiotrack else Icons.Default.Videocam,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                    items(filteredList) { item ->
+                        DownloadedItemRow(
+                            item = item,
+                            onPlay = { onPlayLocalFile(item.filePath, item.title) },
+                            onDelete = { DownloadManager.deleteDownload(item.id) }
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${item.format} (${item.quality}) • ${item.speed} • ${item.totalSize}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-
-                IconButton(onClick = onPauseResume) {
-                    Icon(
-                        imageVector = if (item.state == DownloadState.PAUSED) Icons.Default.PlayArrow else Icons.Default.Pause,
-                        contentDescription = "Pause/Resume",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                IconButton(onClick = onCancel) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            LinearProgressIndicator(
-                progress = item.progress / 100f,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "${item.progress}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = item.state.name,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
             }
         }
     }
 }
 
+// -------------------------------------------------------------
+// Downloaded Item Row (Screenshot 4 exact layout)
+// -------------------------------------------------------------
 @Composable
-fun CompletedDownloadRow(
+private fun DownloadedItemRow(
     item: DownloadItem,
-    onPlay: () -> Unit
+    onPlay: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    var showMenu by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .clickable { onPlay() }
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
+        // Thumbnail with duration overlay
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(width = 95.dp, height = 62.dp)
+                .clip(RoundedCornerShape(8.dp))
         ) {
+            AsyncImage(
+                model = item.thumbnailUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
             Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(42.dp)
+                color = Color.Black.copy(alpha = 0.75f),
+                shape = RoundedCornerShape(3.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(3.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = if (item.isAudio) Icons.Default.Audiotrack else Icons.Default.Videocam,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${item.format} • Completed • ${item.totalSize}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = onPlay) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            IconButton(onClick = { /* Share */ }) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    text = item.duration.ifBlank { if (item.isAudio) "MP3" else "03:15" },
+                    color = Color.White,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
                 )
             }
         }
-    }
-}
 
-@Composable
-fun EmptyDownloadsView(
-    icon: ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                modifier = Modifier.size(88.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(44.dp)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Title, Quality Badge & Size
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.title,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Quality badge e.g. (720P_HD) or (MP3)
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "(${item.resolution})",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = item.formattedSize,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+        }
+
+        // Three-dots menu (⋮)
+        Box {
+            IconButton(onClick = { showMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Options",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("تشغيل الآن") },
+                    onClick = {
+                        showMenu = false
+                        onPlay()
+                    },
+                    leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) }
+                )
+                DropdownMenuItem(
+                    text = { Text("حذف الملف") },
+                    onClick = {
+                        showMenu = false
+                        onDelete()
+                    },
+                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+                )
+            }
         }
     }
 }
