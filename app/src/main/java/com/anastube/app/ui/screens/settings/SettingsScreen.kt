@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,12 +15,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.anastube.app.ui.theme.SnapTubeYellow
+import com.anastube.app.ui.theme.SnapTubeYellowDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,27 +33,27 @@ fun SettingsScreen() {
     val scrollState = rememberScrollState()
 
     var wifiOnly by remember { mutableStateOf(false) }
+    var autoResume by remember { mutableStateOf(true) }
     var notificationEnabled by remember { mutableStateOf(true) }
     var darkModeEnabled by remember { mutableStateOf(true) }
+    var pipEnabled by remember { mutableStateOf(true) }
+    var backgroundPlayEnabled by remember { mutableStateOf(true) }
 
-    var showCleanDialog by remember { mutableStateOf(false) }
-    var cleanDialogTitle by remember { mutableStateOf("") }
-    var cleanDialogMsg by remember { mutableStateOf("") }
+    var concurrentTasks by remember { mutableStateOf(3) }
+    var showTasksDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "الإعدادات",
+                        text = "الملف الشخصي والإعدادات",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 20.sp
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { paddingValues ->
@@ -59,38 +64,169 @@ fun SettingsScreen() {
                 .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            // Group 1: عام (Screenshot 5)
-            SettingsGroupHeader(title = "عام")
+            // VIP Profile Header Card (SnapTube VIP)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(54.dp),
+                            shape = CircleShape,
+                            color = SnapTubeYellow
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.Black,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "مستخدم SnapTube",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = SnapTubeYellow
+                                ) {
+                                    Text(
+                                        text = "VIP",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp,
+                                        color = Color.Black,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "عضوية VIP مفعلة • بدون إعلانات نهائياً • سرعة قصوى",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Divider(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Quick Stats Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        StatItem(count = "24", label = "التنزيلات")
+                        StatItem(count = "1.8 GB", label = "المساحة الموفرة")
+                        StatItem(count = "عالية", label = "جودة الصوت")
+                        StatItem(count = "4K", label = "أقصى دقة")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Group 1: إعدادات التنزيل (Download Settings)
+            SettingsGroupHeader(title = "إعدادات التنزيل")
             SettingsCard {
                 SettingsItem(
-                    icon = Icons.Default.FileDownload,
-                    title = "إعدادات التنزيل",
-                    subtitle = "مسار التنزيل، الحد الأقصى للمهام المتزامنة (3 مهام)",
+                    icon = Icons.Default.CloudDownload,
+                    title = "الحد الأقصى للمهام المتزامنة",
+                    subtitle = "$concurrentTasks مهام في نفس الوقت",
+                    onClick = { showTasksDialog = true }
+                )
+                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    icon = Icons.Default.Folder,
+                    title = "مسار حفظ الملفات",
+                    subtitle = "/sdcard/Download/SnapTube",
                     onClick = {
-                        Toast.makeText(context, "مسار التنزيل الحالي: Movies/Anastube", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "المسار الافتراضي: Download/SnapTube", Toast.LENGTH_SHORT).show()
                     }
                 )
                 Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 SettingsItem(
-                    icon = Icons.Default.Notifications,
-                    title = "إعدادات الإشعارات",
-                    subtitle = if (notificationEnabled) "مفعّلة (إشعار اكتمال التنزيل)" else "معطّلة",
+                    icon = Icons.Default.Wifi,
+                    title = "التنزيل عبر Wi-Fi فقط",
+                    subtitle = if (wifiOnly) "مفعل (توفير بيانات الهاتف)" else "معطل (التنزيل عبر أي شبكة)",
                     trailing = {
                         Switch(
-                            checked = notificationEnabled,
-                            onCheckedChange = { notificationEnabled = it }
+                            checked = wifiOnly,
+                            onCheckedChange = { wifiOnly = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = SnapTubeYellow)
                         )
                     }
                 )
                 Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 SettingsItem(
+                    icon = Icons.Default.Sync,
+                    title = "استئناف التنزيلات تلقائياً",
+                    subtitle = "إعادة المحاولة تلقائياً عند انقطاع الإنترنت",
+                    trailing = {
+                        Switch(
+                            checked = autoResume,
+                            onCheckedChange = { autoResume = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = SnapTubeYellow)
+                        )
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Group 2: المظهر والمشغل (Theme & Player)
+            SettingsGroupHeader(title = "المشغل والمظهر")
+            SettingsCard {
+                SettingsItem(
                     icon = Icons.Default.DarkMode,
-                    title = "السمة / المظهر",
-                    subtitle = if (darkModeEnabled) "الوضع الداكن الفاخر (Royal Blue)" else "الوضع الفاتح",
+                    title = "الوضع الداكن (SnapTube Dark Mode)",
+                    subtitle = if (darkModeEnabled) "مفعل (خلفية داكنة مع لمسات صفراء)" else "الوضع الفاتح",
                     trailing = {
                         Switch(
                             checked = darkModeEnabled,
-                            onCheckedChange = { darkModeEnabled = it }
+                            onCheckedChange = { darkModeEnabled = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = SnapTubeYellow)
+                        )
+                    }
+                )
+                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    icon = Icons.Default.PictureInPicture,
+                    title = "نافذة عائمة (صورة داخل صورة - PiP)",
+                    subtitle = "استمرار تشغيل الفيديو عند الخروج من التطبيق",
+                    trailing = {
+                        Switch(
+                            checked = pipEnabled,
+                            onCheckedChange = { pipEnabled = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = SnapTubeYellow)
+                        )
+                    }
+                )
+                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    icon = Icons.Default.Headphones,
+                    title = "التشغيل في الخلفية",
+                    subtitle = "تشغيل الصوت عند قفل الشاشة أو استخدام تطبيقات أخرى",
+                    trailing = {
+                        Switch(
+                            checked = backgroundPlayEnabled,
+                            onCheckedChange = { backgroundPlayEnabled = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.Black, checkedTrackColor = SnapTubeYellow)
                         )
                     }
                 )
@@ -98,228 +234,125 @@ fun SettingsScreen() {
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Group 2: أدوات التنزيل (Screenshot 5)
-            SettingsGroupHeader(title = "أدوات التنزيل")
+            // Group 3: حول التطبيق (About)
+            SettingsGroupHeader(title = "حول التطبيق")
             SettingsCard {
                 SettingsItem(
-                    icon = Icons.Default.RestoreFromTrash,
-                    title = "استعادة الملفات المحذوفة",
-                    subtitle = "سلة المهملات والملفات المؤقتة",
+                    icon = Icons.Default.Info,
+                    title = "إصدار SnapTube",
+                    subtitle = "V7.25.1.7254510 (VIP النسخة الذهبية)",
                     onClick = {
-                        Toast.makeText(context, "سلة المهملات فارغة حالياً", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "أنت تستخدم أحدث إصدار من SnapTube VIP!", Toast.LENGTH_SHORT).show()
                     }
                 )
                 Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.ChatBubble,
-                    title = "منزل حالات WhatsApp",
-                    subtitle = "تنزيل الصور وفيديوهات الحالة المتاحة بنقرة واحدة",
-                    onClick = {
-                        Toast.makeText(context, "منزل الحالات جاهز ويعمل بالخلفية", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "الخزنة",
-                    subtitle = "حماية وتشفير الفيديوهات والمستندات الخاصة",
-                    onClick = {
-                        Toast.makeText(context, "الخزنة نشطة ومؤمنة", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Group 3: تنظيف الهاتف (Screenshot 5)
-            SettingsGroupHeader(title = "تنظيف الهاتف")
-            SettingsCard {
                 SettingsItem(
                     icon = Icons.Default.CleaningServices,
-                    title = "تنظيف الملفات غير المرغوب فيها",
-                    subtitle = "مسح الكاش والمخلفات المؤقتة لتسريع الهاتف",
+                    title = "مسح الذاكرة المؤقتة (Cache)",
+                    subtitle = "تحرير المساحة المؤقتة للصور والمصغرات",
                     onClick = {
-                        cleanDialogTitle = "تنظيف الملفات غير المرغوب فيها"
-                        cleanDialogMsg = "تم تنظيف 340 MB من ملفات التخزين المؤقت بنجاح!"
-                        showCleanDialog = true
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Speed,
-                    title = "تعزيز الذاكرة (RAM Boost)",
-                    subtitle = "إيقاف العمليات الخاملة لتوفير الذاكرة",
-                    onClick = {
-                        cleanDialogTitle = "تعزيز الذاكرة"
-                        cleanDialogMsg = "تم تسريع الهاتف وتحرير 1.2 GB من ذاكرة RAM!"
-                        showCleanDialog = true
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.BatteryChargingFull,
-                    title = "موفر البطارية",
-                    subtitle = "تحسين استهلاك الطاقة وإطالة عمر البطارية",
-                    onClick = {
-                        cleanDialogTitle = "موفر البطارية"
-                        cleanDialogMsg = "تم تفعيل وضع التوفير الذكي للطاقة بنجاح."
-                        showCleanDialog = true
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.FolderSpecial,
-                    title = "تنظيف الملفات الكبيرة",
-                    subtitle = "فحص الفيديوهات والملفات التي تتجاوز 100 MB",
-                    onClick = {
-                        Toast.makeText(context, "لا توجد ملفات كبيرة مكررة", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.DeleteSweep,
-                    title = "تنظيف سلة المهملات",
-                    subtitle = "حذف نهائي للملفات المستغنى عنها",
-                    onClick = {
-                        Toast.makeText(context, "تم إفراغ سلة المهملات", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Chat,
-                    title = "تنظيف WhatsApp",
-                    subtitle = "إدارة وسائط المقاطع الصوتية ومقاطع الفيديو المتراكمة",
-                    onClick = {
-                        Toast.makeText(context, "فحص مجلدات WhatsApp مكتمل", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.PhotoLibrary,
-                    title = "تنظيف الصور المكررة",
-                    subtitle = "اكتشاف الصور المتطابقة لتوفير المساحة",
-                    onClick = {
-                        Toast.makeText(context, "لم يتم العثور على صور مكررة", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Apps,
-                    title = "إلغاء تثبيت التطبيقات",
-                    subtitle = "إدارة وحذف التطبيقات النادرة الاستخدام",
-                    onClick = {
-                        Toast.makeText(context, "إدارة التطبيقات جاهزة", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Group 4: معلومات (Screenshot 5)
-            SettingsGroupHeader(title = "معلومات")
-            SettingsCard {
-                SettingsItem(
-                    icon = Icons.Default.AccountCircle,
-                    title = "الحساب",
-                    subtitle = "مزامنة التنزيلات والعلامات المرجعية",
-                    onClick = {
-                        Toast.makeText(context, "أنت تستخدم وضع الضيف النظيف بدون تسجيل دخول", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Language,
-                    title = "اللغة",
-                    subtitle = "العربية (الافتراضية)",
-                    onClick = {
-                        Toast.makeText(context, "التطبيق يدعم العربية والإنجليزية", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Feedback,
-                    title = "ملاحظات",
-                    subtitle = "شاركنا رأيك أو أبلغ عن أي مشكلة لتحسين التطبيق",
-                    onClick = {
-                        val emailIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "message/rfc822"
-                            putExtra(Intent.EXTRA_SUBJECT, "ملاحظات حول تطبيق Anastube")
-                        }
-                        context.startActivity(Intent.createChooser(emailIntent, "إرسال ملاحظات"))
+                        Toast.makeText(context, "تم مسح الذاكرة المؤقتة بنجاح!", Toast.LENGTH_SHORT).show()
                     }
                 )
                 Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     icon = Icons.Default.Share,
-                    title = "مشاركة Anastube",
-                    subtitle = "شارك التطبيق مع أصدقائك للاستمتاع بتجربة تنزيل خالية من الإعلانات",
+                    title = "مشاركة التطبيق مع الأصدقاء",
+                    subtitle = "شارك SnapTube مع عائلتك وأصدقائك",
                     onClick = {
-                        val shareIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, "حمّل تطبيق Anastube لتنزيل الفيديوهات والموسيقى بدون أي إعلانات مجاناً!")
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, "حمل تطبيق SnapTube الأصلي لتنزيل الفيديوهات والموسيقى بجودة عالية وبدون إعلانات!")
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "مشاركة التطبيق"))
-                    }
-                )
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                SettingsItem(
-                    icon = Icons.Default.Info,
-                    title = "حول Anastube",
-                    subtitle = "الإصدار 1.0.0 (Zero Ads Edition) • تطوير عصري",
-                    onClick = {
-                        cleanDialogTitle = "حول Anastube"
-                        cleanDialogMsg = "Anastube هو تطبيق تنزيل وتشغيل وسائط حر ومستقل، بدون أي إعلانات مزعجة وبحماية كاملة للخصوصية."
-                        showCleanDialog = true
+                        context.startActivity(Intent.createChooser(shareIntent, "مشاركة SnapTube"))
                     }
                 )
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
 
-        // Clean action dialog
-        if (showCleanDialog) {
-            AlertDialog(
-                onDismissRequest = { showCleanDialog = false },
-                title = { Text(cleanDialogTitle, fontWeight = FontWeight.Bold) },
-                text = { Text(cleanDialogMsg) },
-                confirmButton = {
-                    Button(
-                        onClick = { showCleanDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("حسناً")
+    if (showTasksDialog) {
+        AlertDialog(
+            onDismissRequest = { showTasksDialog = false },
+            title = { Text("الحد الأقصى لمهام التنزيل المتزامنة") },
+            text = {
+                Column {
+                    listOf(1, 2, 3, 5).forEach { num ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    concurrentTasks = num
+                                    showTasksDialog = false
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = concurrentTasks == num,
+                                onClick = {
+                                    concurrentTasks = num
+                                    showTasksDialog = false
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = SnapTubeYellow)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("$num مهام في نفس الوقت")
+                        }
                     }
                 }
-            )
-        }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTasksDialog = false }) {
+                    Text("إغلاق")
+                }
+            }
+        )
     }
 }
 
 @Composable
-private fun SettingsGroupHeader(title: String) {
+fun StatItem(count: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = count,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp,
+            color = SnapTubeYellowDark
+        )
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    }
+}
+
+@Composable
+fun SettingsGroupHeader(title: String) {
     Text(
         text = title,
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+        color = SnapTubeYellowDark,
+        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
     )
 }
 
 @Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         content = content
     )
 }
 
 @Composable
-private fun SettingsItem(
+fun SettingsItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -330,25 +363,23 @@ private fun SettingsItem(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            modifier = Modifier.size(36.dp)
+            modifier = Modifier.size(36.dp),
+            shape = CircleShape,
+            color = SnapTubeYellow.copy(alpha = 0.15f)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = SnapTubeYellowDark,
+                modifier = Modifier.padding(8.dp)
+            )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -360,8 +391,7 @@ private fun SettingsItem(
             Text(
                 text = subtitle,
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                lineHeight = 15.sp
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
 
@@ -371,8 +401,8 @@ private fun SettingsItem(
             Icon(
                 imageVector = Icons.Default.ChevronLeft,
                 contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }

@@ -1,22 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">أنس تيوب (anastube)</string>
+    <string name="app_name">سناب تيوب (SnapTube)</string>
     <string name="tab_home">الرئيسية</string>
+    <string name="tab_files">ملفاتي</string>
+    <string name="tab_tools">الأدوات</string>
+    <string name="tab_me">أنا</string>
     <string name="tab_browser">المتصفح</string>
-    <string name="tab_downloads">التحميلات</string>
-    <string name="tab_library">ملفاتي</string>
-    <string name="tab_settings">الإعدادات</string>
-    <string name="search_placeholder">ابحث أو الصق الرابط هنا...</string>
-    <string name="download_video">فيديو</string>
-    <string name="download_music">موسيقى (صوت)</string>
+
+    <string name="search_placeholder">ابحث أو أدخل رابط الفيديو...</string>
+    <string name="download_videos_as">تنزيل الفيديو بصيغة</string>
+    <string name="download_music">صوت (MUSIC)</string>
+    <string name="download_video">فيديو (VIDEO)</string>
     <string name="start_download">تنزيل</string>
-    <string name="no_ads_tag">تجربة نقية 100% بدون إعلانات</string>
+    <string name="download_started">بدأ التنزيل…</string>
+    <string name="download_continue_all">استئناف الكل</string>
+    <string name="download_pause_all">إيقاف مؤقت للكل</string>
+    <string name="download_task_empty">لا توجد مهام قيد التنزيل حالياً</string>
+
+    <string name="whatsapp_status_saver">حفظ حالات WhatsApp</string>
+    <string name="clean_junk">منظف الملفات المهملة</string>
+    <string name="phone_boost">تسريع الهاتف والذاكرة</string>
+    <string name="battery_saver">موفر طاقة البطارية</string>
+    <string name="video_to_mp3">تحويل الفيديو إلى MP3</string>
+    <string name="private_vault">الخزنة السرية</string>
+
     <string name="trending">شائع</string>
     <string name="music">موسيقى</string>
     <string name="gaming">ألعاب</string>
     <string name="news">أخبار</string>
-    <string name="active_downloads">قيد التحميل</string>
+    <string name="movies">أفلام</string>
+    <string name="active_downloads">قيد التنزيل</string>
     <string name="completed_downloads">المكتملة</string>
     <string name="no_downloads_yet">لا توجد تنزيلات حتى الآن</string>
-    <string name="detected_media">تم رصد وسائط قابلة للتحميل</string>
+    <string name="detected_media">تم رصد وسائط قابلة للتنزيل</string>
 </resources>

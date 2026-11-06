@@ -139,11 +139,11 @@ fun BrowserScreen(
                         )
                         onDownloadTriggered(item)
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
+                    containerColor = Color(0xFFFFBE00),
+                    contentColor = Color.Black,
                     shape = CircleShape
                 ) {
-                    Icon(imageVector = Icons.Default.Download, contentDescription = "Download Video")
+                    Icon(imageVector = Icons.Default.Download, contentDescription = "Download Video", tint = Color.Black)
                 }
             }
         }

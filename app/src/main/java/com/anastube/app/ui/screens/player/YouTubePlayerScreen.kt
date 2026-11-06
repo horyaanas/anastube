@@ -229,7 +229,7 @@ fun YouTubePlayerScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Wide Royal Blue Download Button
+                        // Wide SnapTube Yellow Download Button
                         Button(
                             onClick = onDownloadCurrent,
                             modifier = Modifier
@@ -241,7 +241,7 @@ fun YouTubePlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.ArrowDownward,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = Color.Black,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -249,7 +249,7 @@ fun YouTubePlayerScreen(
                                 text = "تنزيل",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
-                                color = Color.White
+                                color = Color.Black
                             )
                         }
 

@@ -10,39 +10,48 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Blue80,
-    secondary = BlueAccent,
-    tertiary = BrightCyan,
+    primary = SnapTubeYellow,
+    onPrimary = Color.Black,
+    primaryContainer = SnapTubeYellowDark,
+    onPrimaryContainer = Color.White,
+    secondary = SnapTubeYellowAccent,
+    onSecondary = Color.Black,
+    tertiary = SnapTubeGoldBadge,
     background = DarkBackground,
     surface = DarkSurface,
     surfaceVariant = DarkSurfaceVariant,
-    onPrimary = DeepBlue40,
-    onBackground = LightBackground,
-    onSurface = LightBackground
+    onBackground = Color.White,
+    onSurface = Color.White,
+    outline = DarkBorder
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = RoyalBlue40,
-    secondary = DeepBlue40,
-    tertiary = BlueAccent,
+    primary = SnapTubeYellow,
+    onPrimary = Color.Black,
+    primaryContainer = SnapTubeYellowLight,
+    onPrimaryContainer = Color.Black,
+    secondary = SnapTubeYellowDark,
+    onSecondary = Color.White,
+    tertiary = SnapTubeGoldBadge,
     background = LightBackground,
     surface = LightSurface,
     surfaceVariant = LightSurfaceVariant,
-    onPrimary = LightSurface,
-    onBackground = DarkBackground,
-    onSurface = DarkBackground
+    onBackground = Color(0xFF1F2937),
+    onSurface = Color(0xFF1F2937),
+    outline = LightBorder
 )
 
 @Composable
 fun AnastubeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Set false to prioritize brand Royal Blue identity
+    dynamicColor: Boolean = false, // Keep false to preserve iconic SnapTube yellow branding
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -59,7 +68,10 @@ fun AnastubeTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.surface.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            window.navigationBarColor = colorScheme.surface.toArgb()
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

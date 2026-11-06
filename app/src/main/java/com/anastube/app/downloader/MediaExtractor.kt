@@ -11,7 +11,19 @@ object MediaExtractor {
     fun resolveFormats(mediaItem: MediaItem): List<FormatOption> {
         val formats = mutableListOf<FormatOption>()
 
-        // 1. Audio Formats (Music)
+        // 1. Audio Formats (Music) - Matches SnapTube ChooseFormatActivity
+        formats.add(
+            FormatOption(
+                id = "${mediaItem.id}_mp3_70",
+                label = "MP3 70K (Low size)",
+                quality = "70 kbps",
+                format = "MP3",
+                estimatedSize = "2.1 MB",
+                bitrate = "70 kbps",
+                isAudioOnly = true,
+                downloadUrl = mediaItem.url
+            )
+        )
         formats.add(
             FormatOption(
                 id = "${mediaItem.id}_m4a_128",
@@ -27,7 +39,7 @@ object MediaExtractor {
         formats.add(
             FormatOption(
                 id = "${mediaItem.id}_mp3_128",
-                label = "MP3 128K (Fast)",
+                label = "MP3 128K (Standard)",
                 quality = "128 kbps",
                 format = "MP3",
                 estimatedSize = "3.8 MB",
@@ -39,7 +51,7 @@ object MediaExtractor {
         formats.add(
             FormatOption(
                 id = "${mediaItem.id}_mp3_160",
-                label = "MP3 160K (HQ)",
+                label = "MP3 160K (HQ Audio)",
                 quality = "160 kbps",
                 format = "MP3",
                 estimatedSize = "4.9 MB",
@@ -51,7 +63,7 @@ object MediaExtractor {
         formats.add(
             FormatOption(
                 id = "${mediaItem.id}_mp3_320",
-                label = "MP3 320K (Lossless HD)",
+                label = "MP3 320K (Extreme HD)",
                 quality = "320 kbps",
                 format = "MP3",
                 estimatedSize = "9.8 MB",
@@ -61,23 +73,11 @@ object MediaExtractor {
             )
         )
 
-        // 2. Video Formats
-        formats.add(
-            FormatOption(
-                id = "${mediaItem.id}_240p",
-                label = "240p (Ultra Data Saver)",
-                quality = "240p",
-                format = "MP4",
-                estimatedSize = "6.4 MB",
-                bitrate = "400 kbps",
-                isAudioOnly = false,
-                downloadUrl = mediaItem.url
-            )
-        )
+        // 2. Video Formats - Matches SnapTube ChooseFormatActivity
         formats.add(
             FormatOption(
                 id = "${mediaItem.id}_360p",
-                label = "360p (Mobile Standard)",
+                label = "360p (Fast Download)",
                 quality = "360p",
                 format = "MP4",
                 estimatedSize = "12.8 MB",
@@ -118,6 +118,18 @@ object MediaExtractor {
                 format = "MP4",
                 estimatedSize = "68.4 MB",
                 bitrate = "5.0 Mbps",
+                isAudioOnly = false,
+                downloadUrl = mediaItem.url
+            )
+        )
+        formats.add(
+            FormatOption(
+                id = "${mediaItem.id}_1440p",
+                label = "2K Quad HD",
+                quality = "1440p",
+                format = "MP4",
+                estimatedSize = "115.0 MB",
+                bitrate = "10.0 Mbps",
                 isAudioOnly = false,
                 downloadUrl = mediaItem.url
             )

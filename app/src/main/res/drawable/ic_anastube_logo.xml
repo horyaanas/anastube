@@ -4,20 +4,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Blue Rounded Background -->
+    <!-- SnapTube Yellow Rounded Background -->
     <path
-        android:fillColor="#1565C0"
+        android:fillColor="#FFBE00"
         android:pathData="M24,12 H84 A12,12 0 0 1 96,24 V84 A12,12 0 0 1 84,96 H24 A12,12 0 0 1 12,84 V24 A12,12 0 0 1 24,12 Z" />
-    <!-- Gradient accent circle -->
+    <!-- Dark Inner Circle -->
     <path
-        android:fillColor="#1E88E5"
-        android:pathData="M54,54m-34,0a34,34 0,1,1 68,0a34,34 0,1,1 -68,0" />
-    <!-- Play Triangle (White) -->
+        android:fillColor="#1A1A1A"
+        android:pathData="M54,54m-32,0a32,32 0,1,1 64,0a32,32 0,1,1 -64,0" />
+    <!-- White Play Triangle -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M44,36 L70,54 L44,72 Z" />
-    <!-- Down Arrow Download Badge (Cyan Accent) -->
+        android:pathData="M44,38 L70,54 L44,70 Z" />
+    <!-- Down Arrow Download Accent Badge (Red / Yellow) -->
     <path
-        android:fillColor="#00E5FF"
-        android:pathData="M72,66 L78,66 L78,74 L84,74 L75,83 L66,74 L72,74 Z" />
+        android:fillColor="#FF3D00"
+        android:pathData="M70,68 L78,68 L78,76 L84,76 L74,86 L64,76 L70,76 Z" />
 </vector>

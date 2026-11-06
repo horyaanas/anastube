@@ -16,19 +16,19 @@ class AnastubeApp : Application() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(NotificationManager::class.java)
 
-            // Playback Channel
+            // SnapTube Playback Channel
             val playbackChannel = NotificationChannel(
                 CHANNEL_PLAYBACK,
-                "anastube Playback",
+                "SnapTube Playback",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Shows media playback controls in notification"
             }
 
-            // Downloads Channel
+            // SnapTube Downloads Channel
             val downloadChannel = NotificationChannel(
                 CHANNEL_DOWNLOADS,
-                "anastube Downloads",
+                "SnapTube Downloads",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Shows progress and completion of media downloads"
@@ -40,7 +40,7 @@ class AnastubeApp : Application() {
     }
 
     companion object {
-        const val CHANNEL_PLAYBACK = "anastube_playback_channel"
-        const val CHANNEL_DOWNLOADS = "anastube_downloads_channel"
+        const val CHANNEL_PLAYBACK = "snaptube_playback_channel"
+        const val CHANNEL_DOWNLOADS = "snaptube_downloads_channel"
     }
 }

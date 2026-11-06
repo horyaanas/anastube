@@ -92,13 +92,13 @@ fun HomeScreen(
 
     val quickSites = listOf(
         BookmarkItem("yt", "YouTube", "https://m.youtube.com", 0xFFFF0000),
+        BookmarkItem("wa", "حالات WhatsApp", "whatsapp://status", 0xFF25D366),
         BookmarkItem("fb", "Facebook", "https://m.facebook.com", 0xFF1877F2),
         BookmarkItem("ig", "Instagram", "https://instagram.com", 0xFFE1306C),
         BookmarkItem("tk", "TikTok", "https://www.tiktok.com", 0xFF000000),
-        BookmarkItem("wa", "حالات WhatsApp", "whatsapp://status", 0xFF25D366),
-        BookmarkItem("sc", "SoundCloud", "https://soundcloud.com", 0xFFFF5500),
         BookmarkItem("tw", "Twitter / X", "https://x.com", 0xFF1DA1F2),
-        BookmarkItem("vt", "الخزنة", "vault://local", 0xFF1976D2)
+        BookmarkItem("sc", "SoundCloud", "https://soundcloud.com", 0xFFFF5500),
+        BookmarkItem("vm", "Vimeo", "https://vimeo.com", 0xFF1AB7EA)
     )
 
     val quickSuggestions = listOf("أغاني تريند", "قرآن كريم", "شيلات جديدة", "أناشيد حماسية", "أفلام 2026", "بودكاست")
@@ -234,30 +234,30 @@ private fun SearchHomeTabContent(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(44.dp)
+                        color = Color(0xFFFFBE00),
+                        modifier = Modifier.size(46.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
+                                tint = Color.Black,
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "anastube",
+                        text = "SnapTube",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
-                    text = "مشغل وداونلودر بدون إعلانات",
+                    text = "تنزيل الفيديوهات والموسيقى مجاناً وبدون إعلانات",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -928,20 +928,20 @@ private fun VideoCardItem(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // SnapTube Circular Download Button (Screenshot 2: down arrow inside circle)
+            // SnapTube Circular Download Button (Yellow circle + Black arrow)
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFFFFBE00),
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .clickable { onDownload() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.ArrowDownward,
                         contentDescription = "Download",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }

@@ -358,9 +358,9 @@ fun PlayerScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(imageVector = Icons.Default.Download, contentDescription = null, tint = Color.White)
+                        Icon(imageVector = Icons.Default.Download, contentDescription = null, tint = Color.Black)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Download This Video in HD", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Download This Video in HD", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
                     }
                 }
             }

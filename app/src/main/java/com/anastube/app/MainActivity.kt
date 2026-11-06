@@ -33,6 +33,7 @@ import com.anastube.app.ui.screens.player.PlayerScreen
 import com.anastube.app.ui.screens.player.PlayerViewModel
 import com.anastube.app.ui.screens.player.YouTubePlayerScreen
 import com.anastube.app.ui.screens.settings.SettingsScreen
+import com.anastube.app.ui.screens.tools.ToolsScreen
 import com.anastube.app.ui.theme.AnastubeTheme
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -87,9 +88,9 @@ class MainActivity : ComponentActivity() {
 
                 val showBottomBar = currentRoute in listOf(
                     Screen.Home.route,
-                    Screen.Downloads.route,
-                    Screen.Library.route,
-                    Screen.Settings.route
+                    Screen.Files.route,
+                    Screen.Tools.route,
+                    Screen.Me.route
                 )
 
                 Scaffold(
@@ -145,7 +146,7 @@ class MainActivity : ComponentActivity() {
                                         activeMediaForDownload = media
                                     },
                                     onOpenVault = {
-                                        navController.navigate(Screen.Library.route)
+                                        navController.navigate(Screen.Vault.route)
                                     }
                                 )
                             }
@@ -173,24 +174,36 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            composable(Screen.Downloads.route) {
+                            composable(Screen.Files.route) {
                                 DownloadsScreen(
                                     onPlayLocalFile = { path, title ->
                                         val media = MediaItem(
-                                            id = "local_${System.currentTimeMillis()}",
-                                            title = title,
-                                            url = path,
-                                            thumbnailUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
-                                            duration = "Local",
-                                            author = "Downloaded",
-                                            views = ""
+                                             id = "local_${System.currentTimeMillis()}",
+                                             title = title,
+                                             url = path,
+                                             thumbnailUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
+                                             duration = "Local",
+                                             author = "Downloaded",
+                                             views = ""
                                         )
                                         PlayerViewModel.playMedia(media)
                                     }
                                 )
                             }
 
-                            composable(Screen.Library.route) {
+                            composable(Screen.Tools.route) {
+                                ToolsScreen(
+                                    onOpenVault = {
+                                        navController.navigate(Screen.Vault.route)
+                                    },
+                                    onNavigateToBrowser = { url ->
+                                        val encoded = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+                                        navController.navigate("browser?url=$encoded")
+                                    }
+                                )
+                            }
+
+                            composable(Screen.Vault.route) {
                                 LibraryScreen(
                                     onPlayMedia = { path, name ->
                                         val media = MediaItem(
@@ -207,7 +220,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            composable(Screen.Settings.route) {
+                            composable(Screen.Me.route) {
                                 SettingsScreen()
                             }
                         }
@@ -254,7 +267,7 @@ class MainActivity : ComponentActivity() {
                                 onStartDownload = { format, customFileName ->
                                     DownloadManager.enqueueDownload(context, media, format, customFileName)
                                     activeMediaForDownload = null
-                                    navController.navigate(Screen.Downloads.route)
+                                    navController.navigate(Screen.Files.route)
                                 }
                             )
                         }
